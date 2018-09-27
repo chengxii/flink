@@ -42,6 +42,7 @@ import org.apache.flink.table.api.BatchQueryConfig;
 import org.apache.flink.table.api.QueryConfig;
 import org.apache.flink.table.api.StreamQueryConfig;
 import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.java.BatchTableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.client.config.Deployment;
@@ -74,6 +75,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Context for executing table programs. This class caches everything that can be cached across
@@ -180,6 +182,19 @@ public class ExecutionContext<T> {
 
 	public Map<String, TableSink<?>> getTableSinks() {
 		return tableSinks;
+	}
+
+	/**
+	 * Executes the given supplier using the execution context's classloader as thread classloader.
+	 */
+	public <R> R wrapClassLoader(Supplier<R> supplier) {
+		final ClassLoader previousClassloader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(classLoader);
+		try {
+			return supplier.get();
+		} finally {
+			Thread.currentThread().setContextClassLoader(previousClassloader);
+		}
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -309,6 +324,18 @@ public class ExecutionContext<T> {
 					}
 				});
 			}
+
+			// register views
+			mergedEnv.getViews().forEach((name, query) -> {
+				// if registering a view fails at this point
+				// it means that it accesses tables that are not available anymore
+				try {
+					tableEnv.registerTable(name, tableEnv.sqlQuery(query));
+				} catch (ValidationException e) {
+					throw new SqlExecutionException(
+						"Invalid view '" + name + "' with query:\n" + query + "\nCause: " + e.getMessage());
+				}
+			});
 		}
 
 		public QueryConfig getQueryConfig() {

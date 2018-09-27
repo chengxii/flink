@@ -20,6 +20,7 @@ package org.apache.flink.table.codegen.calls
 
 import java.lang.reflect.Method
 
+import org.apache.calcite.avatica.util.TimeUnit
 import org.apache.calcite.avatica.util.TimeUnitRange
 import org.apache.calcite.sql.SqlOperator
 import org.apache.calcite.sql.fun.SqlStdOperatorTable._
@@ -147,6 +148,12 @@ object FunctionGenerator {
     BuiltInMethod.OVERLAY.method)
 
   addSqlFunctionMethod(
+    REGEXP_REPLACE,
+    Seq(STRING_TYPE_INFO, STRING_TYPE_INFO, STRING_TYPE_INFO),
+    STRING_TYPE_INFO,
+    BuiltInMethods.REGEXP_REPLACE)
+
+  addSqlFunctionMethod(
     FROM_BASE64,
     Seq(STRING_TYPE_INFO),
     STRING_TYPE_INFO,
@@ -157,6 +164,30 @@ object FunctionGenerator {
     Seq(STRING_TYPE_INFO),
     STRING_TYPE_INFO,
     BuiltInMethods.TOBASE64)
+
+  addSqlFunctionMethod(
+    UUID,
+    Seq(),
+    STRING_TYPE_INFO,
+    BuiltInMethods.UUID)
+
+  addSqlFunctionMethod(
+    LTRIM,
+    Seq(STRING_TYPE_INFO),
+    STRING_TYPE_INFO,
+    BuiltInMethod.LTRIM.method)
+
+  addSqlFunctionMethod(
+    RTRIM,
+    Seq(STRING_TYPE_INFO),
+    STRING_TYPE_INFO,
+    BuiltInMethod.RTRIM.method)
+
+  addSqlFunctionMethod(
+    REPEAT,
+    Seq(STRING_TYPE_INFO, INT_TYPE_INFO),
+    STRING_TYPE_INFO,
+    BuiltInMethods.REPEAT)
 
   // ----------------------------------------------------------------------------------------------
   // Arithmetic functions
@@ -455,6 +486,18 @@ object FunctionGenerator {
     STRING_TYPE_INFO,
     BuiltInMethods.BIN)
 
+  addSqlFunctionMethod(
+    ScalarSqlFunctions.HEX,
+    Seq(LONG_TYPE_INFO),
+    STRING_TYPE_INFO,
+    BuiltInMethods.HEX_LONG)
+
+  addSqlFunctionMethod(
+    ScalarSqlFunctions.HEX,
+    Seq(STRING_TYPE_INFO),
+    STRING_TYPE_INFO,
+    BuiltInMethods.HEX_STRING)
+
   // ----------------------------------------------------------------------------------------------
   // Temporal functions
   // ----------------------------------------------------------------------------------------------
@@ -488,6 +531,29 @@ object FunctionGenerator {
     EXTRACT,
     Seq(new GenericTypeInfo(classOf[TimeUnitRange]), SqlTimeTypeInfo.DATE),
     new ExtractCallGen(LONG_TYPE_INFO, BuiltInMethod.UNIX_DATE_EXTRACT.method))
+
+  addSqlFunction(
+    TIMESTAMP_DIFF,
+    Seq(
+      new GenericTypeInfo(classOf[TimeUnit]),
+      SqlTimeTypeInfo.TIMESTAMP,
+      SqlTimeTypeInfo.TIMESTAMP),
+    new TimestampDiffCallGen)
+
+  addSqlFunction(
+    TIMESTAMP_DIFF,
+    Seq(new GenericTypeInfo(classOf[TimeUnit]), SqlTimeTypeInfo.TIMESTAMP, SqlTimeTypeInfo.DATE),
+    new TimestampDiffCallGen)
+
+  addSqlFunction(
+    TIMESTAMP_DIFF,
+    Seq(new GenericTypeInfo(classOf[TimeUnit]), SqlTimeTypeInfo.DATE, SqlTimeTypeInfo.TIMESTAMP),
+    new TimestampDiffCallGen)
+
+  addSqlFunction(
+    TIMESTAMP_DIFF,
+    Seq(new GenericTypeInfo(classOf[TimeUnit]), SqlTimeTypeInfo.DATE, SqlTimeTypeInfo.DATE),
+    new TimestampDiffCallGen)
 
   addSqlFunction(
     FLOOR,

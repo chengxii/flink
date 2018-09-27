@@ -393,6 +393,106 @@ class ScalarFunctionsTest extends ScalarTypesTestBase {
   }
 
   @Test
+  def testHex(): Unit = {
+    testAllApis(
+      100.hex(),
+      "100.hex()",
+      "HEX(100)",
+      "64")
+
+    testAllApis(
+      'f2.hex(),
+      "f2.hex()",
+      "HEX(f2)",
+      "2A")
+
+    testAllApis(
+      Null(Types.BYTE).hex(),
+      "hex(Null(BYTE))",
+      "HEX(CAST(NULL AS TINYINT))",
+      "null")
+
+    testAllApis(
+      'f3.hex(),
+      "f3.hex()",
+      "HEX(f3)",
+      "2B")
+
+    testAllApis(
+      'f4.hex(),
+      "f4.hex()",
+      "HEX(f4)",
+      "2C")
+
+    testAllApis(
+      'f7.hex(),
+      "f7.hex()",
+      "HEX(f7)",
+      "3")
+
+    testAllApis(
+      12.hex(),
+      "12.hex()",
+      "HEX(12)",
+      "C")
+
+    testAllApis(
+      10.hex(),
+      "10.hex()",
+      "HEX(10)",
+      "A")
+
+    testAllApis(
+      0.hex(),
+      "0.hex()",
+      "HEX(0)",
+      "0")
+
+    testAllApis(
+      "ö".hex(),
+      "'ö'.hex()",
+      "HEX('ö')",
+      "C3B6")
+
+    testAllApis(
+      'f32.hex(),
+      "f32.hex()",
+      "HEX(f32)",
+      "FFFFFFFFFFFFFFFF")
+
+    testAllApis(
+      'f0.hex(),
+      "f0.hex()",
+      "HEX(f0)",
+      "546869732069732061207465737420537472696E672E")
+
+    testAllApis(
+      'f8.hex(),
+      "f8.hex()",
+      "HEX(f8)",
+      "20546869732069732061207465737420537472696E672E20")
+
+    testAllApis(
+      'f23.hex(),
+      "f23.hex()",
+      "HEX(f23)",
+      "25546869732069732061207465737420537472696E672E")
+
+    testAllApis(
+      'f24.hex(),
+      "f24.hex()",
+      "HEX(f24)",
+      "2A5F546869732069732061207465737420537472696E672E")
+
+    testAllApis(
+      "你好".hex(),
+      "'你好'.hex()",
+      "HEX('你好')",
+      "E4BDA0E5A5BD"
+    )
+  }
+
+  @Test
   def testBin(): Unit = {
 
     testAllApis(
@@ -451,6 +551,70 @@ class ScalarFunctionsTest extends ScalarTypesTestBase {
   }
 
   @Test
+  def testRegexpReplace(): Unit = {
+
+    testAllApis(
+      "foobar".regexpReplace("oo|ar", "abc"),
+      "'foobar'.regexpReplace('oo|ar', 'abc')",
+      "regexp_replace('foobar', 'oo|ar', 'abc')",
+      "fabcbabc")
+
+    testAllApis(
+      "foofar".regexpReplace("^f", ""),
+      "'foofar'.regexpReplace('^f', '')",
+      "regexp_replace('foofar', '^f', '')",
+      "oofar")
+
+    testAllApis(
+      "foobar".regexpReplace("^f*.*r$", ""),
+      "'foobar'.regexpReplace('^f*.*r$', '')",
+      "regexp_replace('foobar', '^f*.*r$', '')",
+      "")
+
+    testAllApis(
+      "foo1bar2".regexpReplace("\\d", ""),
+      "'foo1bar2'.regexpReplace('\\d', '')",
+      "regexp_replace('foobar', '\\d', '')",
+      "foobar")
+
+    testAllApis(
+      "foobar".regexpReplace("\\w", ""),
+      "'foobar'.regexpReplace('\\w', '')",
+      "regexp_replace('foobar', '\\w', '')",
+      "")
+
+    testAllApis(
+      "fooobar".regexpReplace("oo", "$"),
+      "'fooobar'.regexpReplace('oo', '$')",
+      "regexp_replace('fooobar', 'oo', '$')",
+      "f$obar")
+
+    testAllApis(
+      "foobar".regexpReplace("oo", "\\"),
+      "'foobar'.regexpReplace('oo', '\\')",
+      "regexp_replace('foobar', 'oo', '\\')",
+      "f\\bar")
+
+    testAllApis(
+      'f33.regexpReplace("oo|ar", ""),
+      "f33.regexpReplace('oo|ar', '')",
+      "REGEXP_REPLACE(f33, 'oo|ar', '')",
+      "null")
+
+    testAllApis(
+      "foobar".regexpReplace('f33, ""),
+      "'foobar'.regexpReplace(f33, '')",
+      "REGEXP_REPLACE('foobar', f33, '')",
+      "null")
+
+    testAllApis(
+      "foobar".regexpReplace("oo|ar", 'f33),
+      "'foobar'.regexpReplace('oo|ar', f33)",
+      "REGEXP_REPLACE('foobar', 'oo|ar', f33)",
+      "null")
+  }
+
+  @Test
   def testFromBase64(): Unit = {
     testAllApis(
       'f35.fromBase64(),
@@ -470,6 +634,13 @@ class ScalarFunctionsTest extends ScalarTypesTestBase {
       "f33.fromBase64()",
       "FROM_BASE64(f33)",
       "null")
+
+    testAllApis(
+      "5L2g5aW9".fromBase64(),
+      "'5L2g5aW9'.fromBase64()",
+      "FROM_BASE64('5L2g5aW9')",
+      "你好"
+    )
   }
 
   @Test
@@ -498,6 +669,139 @@ class ScalarFunctionsTest extends ScalarTypesTestBase {
       "f33.toBase64()",
       "TO_BASE64(f33)",
       "null")
+
+    testAllApis(
+      "你好".toBase64(),
+      "'你好'.toBase64()",
+      "TO_BASE64('你好')",
+      "5L2g5aW9"
+    )
+  }
+
+  @Test
+  def testUUID(): Unit = {
+    testAllApis(
+      uuid().charLength(),
+      "uuid().charLength",
+      "CHARACTER_LENGTH(UUID())",
+      "36")
+
+    testAllApis(
+      uuid().substring(9, 1),
+      "uuid().substring(9, 1)",
+      "SUBSTRING(UUID(), 9, 1)",
+      "-")
+
+    testAllApis(
+      uuid().substring(14, 1),
+      "uuid().substring(14, 1)",
+      "SUBSTRING(UUID(), 14, 1)",
+      "-")
+
+    testAllApis(
+      uuid().substring(19, 1),
+      "uuid().substring(19, 1)",
+      "SUBSTRING(UUID(), 19, 1)",
+      "-")
+
+    testAllApis(
+      uuid().substring(24, 1),
+      "uuid().substring(24, 1)",
+      "SUBSTRING(UUID(), 24, 1)",
+      "-")
+  }
+
+  @Test
+  def testLTrim(): Unit = {
+    testAllApis(
+      'f8.ltrim(),
+      "f8.ltrim",
+      "LTRIM(f8)",
+      "This is a test String. ")
+
+    testAllApis(
+      'f0.ltrim(),
+      "f0.ltrim",
+      "LTRIM(f0)",
+      "This is a test String.")
+
+    testAllApis(
+      "".ltrim(),
+      "''.ltrim()",
+      "LTRIM('')",
+      "")
+
+    testAllApis(
+      'f33.ltrim(),
+      "f33.ltrim",
+      "LTRIM(f33)",
+      "null")
+  }
+
+  @Test
+  def testRTrim(): Unit = {
+    testAllApis(
+      'f8.rtrim(),
+      "f8.rtrim",
+      "RTRIM(f8)",
+      " This is a test String.")
+
+    testAllApis(
+      'f0.rtrim(),
+      "f0.rtrim",
+      "RTRIM(f0)",
+      "This is a test String.")
+
+    testAllApis(
+      "".rtrim(),
+      "''.rtrim()",
+      "RTRIM('')",
+      "")
+
+    testAllApis(
+      'f33.rtrim(),
+      "f33.rtrim",
+      "RTRIM(f33)",
+      "null")
+  }
+
+  @Test
+  def testRepeat(): Unit = {
+    testAllApis(
+      'f0.repeat(1),
+      "f0.repeat(1)",
+      "REPEAT(f0, 1)",
+      "This is a test String.")
+
+    testAllApis(
+      'f0.repeat(2),
+      "f0.repeat(2)",
+      "REPEAT(f0, 2)",
+      "This is a test String.This is a test String.")
+
+    testAllApis(
+      'f0.repeat(0),
+      "f0.repeat(0)",
+      "REPEAT(f0, 0)",
+      "")
+
+    testAllApis(
+      'f0.repeat(-1),
+      "f0.repeat(-1)",
+      "REPEAT(f0, -1)",
+      "")
+
+    testAllApis(
+      'f33.repeat(2),
+      "f33.repeat(2)",
+      "REPEAT(f33, 2)",
+      "null")
+
+    testAllApis(
+      "".repeat(1),
+      "''.repeat(1)",
+      "REPEAT('', 2)",
+      "")
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -1941,6 +2245,121 @@ class ScalarFunctionsTest extends ScalarTypesTestBase {
       "(TIMESTAMP '2011-03-10 02:02:02.001', INTERVAL '0' SECOND) OVERLAPS " +
         "(TIMESTAMP '2011-03-10 02:02:02.002', TIMESTAMP '2011-03-10 02:02:02.002')",
       "false")
+  }
+
+  @Test
+  def testTimestampDiff(): Unit = {
+    val dataMap = Map(
+      ("DAY", TimePointUnit.DAY, "SQL_TSI_DAY") -> Seq(
+        ("2018-07-03 11:11:11", "2018-07-05 11:11:11", "2"), // timestamp, timestamp
+        ("2016-06-15", "2016-06-16 11:11:11", "1"), // date, timestamp
+        ("2016-06-15 11:00:00", "2016-06-19", "3"), // timestamp, date
+        ("2016-06-15", "2016-06-18", "3") // date, date
+      ),
+      ("HOUR", TimePointUnit.HOUR, "SQL_TSI_HOUR") -> Seq(
+        ("2018-07-03 11:11:11", "2018-07-04 12:12:11", "25"),
+        ("2016-06-15", "2016-06-16 11:11:11", "35"),
+        ("2016-06-15 11:00:00", "2016-06-19", "85"),
+        ("2016-06-15", "2016-06-12", "-72")
+      ),
+      ("MINUTE", TimePointUnit.MINUTE, "SQL_TSI_MINUTE") -> Seq(
+        ("2018-07-03 11:11:11", "2018-07-03 12:10:11", "59"),
+        ("2016-06-15", "2016-06-16 11:11:11", "2111"),
+        ("2016-06-15 11:00:00", "2016-06-19", "5100"),
+        ("2016-06-15", "2016-06-18", "4320")
+      ),
+      ("SECOND", TimePointUnit.SECOND, "SQL_TSI_SECOND") -> Seq(
+        ("2018-07-03 11:11:11", "2018-07-03 11:12:12", "61"),
+        ("2016-06-15", "2016-06-16 11:11:11", "126671"),
+        ("2016-06-15 11:00:00", "2016-06-19", "306000"),
+        ("2016-06-15", "2016-06-18", "259200")
+      ),
+      ("WEEK", TimePointUnit.WEEK, "SQL_TSI_WEEK") -> Seq(
+        ("2018-05-03 11:11:11", "2018-07-03 11:12:12", "8"),
+        ("2016-04-15", "2016-07-16 11:11:11", "13"),
+        ("2016-04-15 11:00:00", "2016-09-19", "22"),
+        ("2016-08-15", "2016-06-18", "-8")
+      ),
+      ("MONTH", TimePointUnit.MONTH, "SQL_TSI_MONTH") -> Seq(
+        ("2018-07-03 11:11:11", "2018-09-05 11:11:11", "2"),
+        ("2016-06-15", "2018-06-16 11:11:11", "24"),
+        ("2016-06-15 11:00:00", "2018-05-19", "23"),
+        ("2016-06-15", "2018-03-18", "21")
+      ),
+      ("QUARTER", TimePointUnit.QUARTER, "SQL_TSI_QUARTER") -> Seq(
+        ("2018-01-03 11:11:11", "2018-09-05 11:11:11", "2"),
+        ("2016-06-15", "2018-06-16 11:11:11", "8"),
+        ("2016-06-15 11:00:00", "2018-05-19", "7"),
+        ("2016-06-15", "2018-03-18", "7")
+      )
+    )
+
+    for ((unitParts, dataParts) <- dataMap) {
+      for ((data,index) <- dataParts.zipWithIndex) {
+        index match {
+          case 0 => // timestamp, timestamp
+            testAllApis(
+              timestampDiff(unitParts._2, data._1.toTimestamp, data._2.toTimestamp),
+              s"timestampDiff(${unitParts._1}, '${data._1}'.toTimestamp, '${data._2}'.toTimestamp)",
+              s"TIMESTAMPDIFF(${unitParts._1}, TIMESTAMP '${data._1}', TIMESTAMP '${data._2}')",
+              data._3
+            )
+            testSqlApi(  // sql tsi
+              s"TIMESTAMPDIFF(${unitParts._3}, TIMESTAMP '${data._1}', TIMESTAMP '${data._2}')",
+              data._3
+            )
+          case 1 => // date, timestamp
+            testAllApis(
+              timestampDiff(unitParts._2, data._1.toDate, data._2.toTimestamp),
+              s"timestampDiff(${unitParts._1}, '${data._1}'.toDate, '${data._2}'.toTimestamp)",
+              s"TIMESTAMPDIFF(${unitParts._1}, DATE '${data._1}', TIMESTAMP '${data._2}')",
+              data._3
+            )
+            testSqlApi( // sql tsi
+              s"TIMESTAMPDIFF(${unitParts._3}, DATE '${data._1}', TIMESTAMP '${data._2}')",
+              data._3
+            )
+          case 2 => // timestamp, date
+            testAllApis(
+              timestampDiff(unitParts._2, data._1.toTimestamp, data._2.toDate),
+              s"timestampDiff(${unitParts._1}, '${data._1}'.toTimestamp, '${data._2}'.toDate)",
+              s"TIMESTAMPDIFF(${unitParts._1}, TIMESTAMP '${data._1}', DATE '${data._2}')",
+              data._3
+            )
+            testSqlApi( // sql tsi
+              s"TIMESTAMPDIFF(${unitParts._3}, TIMESTAMP '${data._1}', DATE '${data._2}')",
+              data._3
+            )
+          case 3 => // date, date
+            testAllApis(
+              timestampDiff(unitParts._2, data._1.toDate, data._2.toDate),
+              s"timestampDiff(${unitParts._1}, '${data._1}'.toDate, '${data._2}'.toDate)",
+              s"TIMESTAMPDIFF(${unitParts._1}, DATE '${data._1}', DATE '${data._2}')",
+              data._3
+            )
+            testSqlApi( // sql tsi
+              s"TIMESTAMPDIFF(${unitParts._3}, DATE '${data._1}', DATE '${data._2}')",
+              data._3
+            )
+        }
+      }
+    }
+
+    testAllApis(
+      timestampDiff(TimePointUnit.DAY, Null(Types.SQL_TIMESTAMP),
+        "2016-02-24 12:42:25".toTimestamp),
+      "timestampDiff(DAY, Null(SQL_TIMESTAMP), '2016-02-24 12:42:25'.toTimestamp)",
+      "TIMESTAMPDIFF(DAY, CAST(NULL AS TIMESTAMP), TIMESTAMP '2016-02-24 12:42:25')",
+      "null"
+    )
+
+    testAllApis(
+      timestampDiff(TimePointUnit.DAY, "2016-02-24 12:42:25".toTimestamp,
+        Null(Types.SQL_TIMESTAMP)),
+      "timestampDiff(DAY, '2016-02-24 12:42:25'.toTimestamp,  Null(SQL_TIMESTAMP))",
+      "TIMESTAMPDIFF(DAY, TIMESTAMP '2016-02-24 12:42:25',  CAST(NULL AS TIMESTAMP))",
+      "null"
+    )
   }
 
   @Test

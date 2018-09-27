@@ -22,12 +22,13 @@ import java.sql.{Date, Time, Timestamp}
 
 import org.apache.calcite.avatica.util.DateTimeUtils._
 import org.apache.flink.api.common.typeinfo.{SqlTimeTypeInfo, TypeInformation}
-import org.apache.flink.table.api.{TableException, CurrentRow, CurrentRange, UnboundedRow, UnboundedRange}
+import org.apache.flink.table.api.{CurrentRange, CurrentRow, TableException, UnboundedRange, UnboundedRow}
 import org.apache.flink.table.expressions.ExpressionUtils.{convertArray, toMilliInterval, toMonthInterval, toRowInterval}
 import org.apache.flink.table.api.Table
 import org.apache.flink.table.expressions.TimeIntervalUnit.TimeIntervalUnit
+import org.apache.flink.table.expressions.TimePointUnit.TimePointUnit
 import org.apache.flink.table.expressions._
-import org.apache.flink.table.functions.AggregateFunction
+import org.apache.flink.table.functions.{AggregateFunction, DistinctAggregateFunction}
 
 import scala.language.implicitConversions
 
@@ -172,7 +173,7 @@ trait ImplicitExpressionOperations {
     * If all values are null, 0 is returned.
     */
   def sum0 = Sum0(expr)
-  
+
   /**
     * Returns the minimum value of field across all input values.
     */
@@ -214,7 +215,7 @@ trait ImplicitExpressionOperations {
   def varSamp = VarSamp(expr)
 
   /**
-    *  Returns multiset aggregate of a given expression.
+    * Returns multiset aggregate of a given expression.
     */
   def collect = Collect(expr)
 
@@ -236,7 +237,18 @@ trait ImplicitExpressionOperations {
     */
   def as(name: Symbol, extraNames: Symbol*) = Alias(expr, name.name, extraNames.map(_.name))
 
+  /**
+    * Specifies ascending order of an expression i.e. a field for orderBy call.
+    *
+    * @return ascend expression
+    */
   def asc = Asc(expr)
+
+  /**
+    * Specifies descending order of an expression i.e. a field for orderBy call.
+    *
+    * @return descend expression
+    */
   def desc = Desc(expr)
 
   /**
@@ -406,6 +418,15 @@ trait ImplicitExpressionOperations {
     */
   def bin() = Bin(expr)
 
+  /**
+    * Returns a string representation of an integer numeric value or a string in hex format. Returns
+    * null if numeric or string is null.
+    *
+    * E.g. a numeric 20 leads to "14", a numeric 100 leads to "64", and a string "hello,world" leads
+    * to "68656c6c6f2c776f726c64".
+    */
+  def hex() = Hex(expr)
+
   // String operations
 
   /**
@@ -545,6 +566,13 @@ trait ImplicitExpressionOperations {
     Overlay(expr, newString, starting, length)
 
   /**
+    * Returns a string with all substrings that match the regular expression consecutively
+    * being replaced.
+    */
+  def regexpReplace(regex: Expression, replacement: Expression) =
+    RegexpReplace(expr, regex, replacement)
+
+  /**
     * Returns the base string decoded with base64.
     */
   def fromBase64() = FromBase64(expr)
@@ -554,20 +582,35 @@ trait ImplicitExpressionOperations {
     */
   def toBase64() = ToBase64(expr)
 
+  /**
+    * Returns a string that removes the left whitespaces from the given string.
+    */
+  def ltrim() = LTrim(expr)
+
+  /**
+    * Returns a string that removes the right whitespaces from the given string.
+    */
+  def rtrim() = RTrim(expr)
+
+  /**
+    * Returns a string that repeats the base string n times.
+    */
+  def repeat(n: Expression) = Repeat(expr, n)
+
   // Temporal operations
 
   /**
-    * Parses a date string in the form "yy-mm-dd" to a SQL Date.
+    * Parses a date string in the form "yyyy-MM-dd" to a SQL Date.
     */
   def toDate = Cast(expr, SqlTimeTypeInfo.DATE)
 
   /**
-    * Parses a time string in the form "hh:mm:ss" to a SQL Time.
+    * Parses a time string in the form "HH:mm:ss" to a SQL Time.
     */
   def toTime = Cast(expr, SqlTimeTypeInfo.TIME)
 
   /**
-    * Parses a timestamp string in the form "yy-mm-dd hh:mm:ss.fff" to a SQL Timestamp.
+    * Parses a timestamp string in the form "yyyy-MM-dd HH:mm:ss[.SSS]" to a SQL Timestamp.
     */
   def toTimestamp = Cast(expr, SqlTimeTypeInfo.TIMESTAMP)
 
@@ -963,6 +1006,10 @@ trait ImplicitExpressionConversions {
   implicit def array2ArrayConstructor(array: Array[_]): Expression = convertArray(array)
   implicit def userDefinedAggFunctionConstructor[T: TypeInformation, ACC: TypeInformation]
       (udagg: AggregateFunction[T, ACC]): UDAGGExpression[T, ACC] = UDAGGExpression(udagg)
+  implicit def toDistinct(agg: Aggregation): DistinctAgg = DistinctAgg(agg)
+  implicit def toDistinct[T: TypeInformation, ACC: TypeInformation]
+      (agg: AggregateFunction[T, ACC]): DistinctAggregateFunction[T, ACC] =
+    DistinctAggregateFunction(agg)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1092,6 +1139,34 @@ object dateFormat {
     format: Expression
   ): Expression = {
     DateFormat(timestamp, format)
+  }
+}
+
+/**
+  * Returns the (signed) number of [[TimePointUnit]] between timePoint1 and timePoint2.
+  *
+  * For example, timestampDiff(TimePointUnit.DAY, '2016-06-15'.toDate, '2016-06-18'.toDate leads
+  * to 3.
+  */
+object timestampDiff {
+
+  /**
+    * Returns the (signed) number of [[TimePointUnit]] between timePoint1 and timePoint2.
+    *
+    * For example, timestampDiff(TimePointUnit.DAY, '2016-06-15'.toDate, '2016-06-18'.toDate leads
+    * to 3.
+    *
+    * @param timePointUnit The unit to compute diff.
+    * @param timePoint1 The first point in time.
+    * @param timePoint2 The second point in time.
+    * @return The number of intervals as integer value.
+    */
+  def apply(
+      timePointUnit: TimePointUnit,
+      timePoint1: Expression,
+      timePoint2: Expression)
+    : Expression = {
+    TimestampDiff(timePointUnit, timePoint1, timePoint2)
   }
 }
 
@@ -1244,6 +1319,25 @@ object atan2 {
 object concat_ws {
   def apply(separator: Expression, string: Expression, strings: Expression*): Expression = {
     ConcatWs(separator, Seq(string) ++ strings)
+  }
+}
+
+/**
+  * Returns an UUID (Universally Unique Identifier) string (e.g.,
+  * "3d3c68f7-f608-473f-b60c-b0c44ad4cc4e") according to RFC 4122 type 4 (pseudo randomly
+  * generated) UUID. The UUID is generated using a cryptographically strong pseudo random number
+  * generator.
+  */
+object uuid {
+
+  /**
+    * Returns an UUID (Universally Unique Identifier) string (e.g.,
+    * "3d3c68f7-f608-473f-b60c-b0c44ad4cc4e") according to RFC 4122 type 4 (pseudo randomly
+    * generated) UUID. The UUID is generated using a cryptographically strong pseudo random number
+    * generator.
+    */
+  def apply(): Expression = {
+    UUID()
   }
 }
 
